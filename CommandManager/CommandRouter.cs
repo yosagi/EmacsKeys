@@ -178,9 +178,14 @@ namespace Microsoft.VisualStudio.Editor.EmacsEmulation
                 return !IsIntellisenseCommand(ref pguidCmdGroup, nCmdID);
             }
 
+            if(IsSnippetCommand(ref pguidCmdGroup, nCmdID))
+            {
+                return false;
+            }
+
             return true;
         }
-
+        
         private bool IsIntellisenseActive()
         {
             return _completionBroker.IsCompletionActive(_view);
@@ -246,6 +251,20 @@ namespace Microsoft.VisualStudio.Editor.EmacsEmulation
             }
 
             // If the command is none of the above, the it's not an Intellisense command
+            return false;
+        }
+
+        private bool IsSnippetCommand(ref Guid pguidCmdGroup, uint nCmdID)
+        {
+            if (pguidCmdGroup == VSConstants.VSStd2K)
+            {
+                switch (nCmdID)
+                {
+                    case (uint)VSConstants.VSStd2KCmdID.TAB:
+                        return true;
+                }
+            }
+            
             return false;
         }
     }
