@@ -15,6 +15,7 @@ using Microsoft.VisualStudio.ComponentModelHost;
 using Microsoft.VisualStudio.Text.Editor;
 using System.Security.Principal;
 using System.Reflection;
+using System.Threading;
 
 namespace Microsoft.VisualStudio.Editor.EmacsEmulation
 {
@@ -30,21 +31,21 @@ namespace Microsoft.VisualStudio.Editor.EmacsEmulation
     /// </summary>
     // This attribute tells the PkgDef creation utility (CreatePkgDef.exe) that this class is
     // a package.
-    [PackageRegistration(UseManagedResourcesOnly = true)]
+    [PackageRegistration(UseManagedResourcesOnly = true, AllowsBackgroundLoading = true)]
     // This attribute is used to register the informations needed to show the this package
     // in the Help/About dialog of Visual Studio.
     [InstalledProductRegistration("#110", "#112", "1.0", IconResourceID = 400)]
     // This attribute is needed to let the shell know that this package exposes some menus.
     //[ProvideMenuResource("Menus.ctmenu", 1)]
     [Guid("d88ec9a6-cdda-4b04-8e46-ca81a3997a3a")]
-    [ProvideAutoLoad(UIContextGuids.SolutionExists)]
-    public sealed class EmacsEmulationPackage : Package
+    [ProvideAutoLoad(UIContextGuids.SolutionExists, PackageAutoLoadFlags.BackgroundLoad)]
+    public sealed class EmacsEmulationPackage : AsyncPackage
     {
         const string InstallFilename = "EmacsSetup.bat";
 
-        protected override void Initialize()
+        protected override async System.Threading.Tasks.Task InitializeAsync(CancellationToken cancellationToken, IProgress<ServiceProgressData> progress)
         {
-            base.Initialize();
+            await base.InitializeAsync(cancellationToken, progress);
 
             var componentModel = this.GetService<SComponentModel, IComponentModel>();
             var manager = componentModel.GetService<EmacsCommandsManager>();
@@ -72,6 +73,7 @@ namespace Microsoft.VisualStudio.Editor.EmacsEmulation
             {
             }
 
+            await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync(cancellationToken);
             manager.CheckEmacsVskSelected();
         }
 
