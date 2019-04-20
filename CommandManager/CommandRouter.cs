@@ -7,6 +7,8 @@ using Microsoft.VisualStudio.Text.Editor;
 using Microsoft.VisualStudio.Language.Intellisense;
 using Microsoft.VisualStudio.TextManager.Interop;
 using EnvDTE;
+using Microsoft.VisualStudio.Shell;
+using System.Threading;
 
 namespace Microsoft.VisualStudio.Editor.EmacsEmulation
 {
@@ -141,10 +143,9 @@ namespace Microsoft.VisualStudio.Editor.EmacsEmulation
         /// </remarks>
         private void ExecuteClosuredCommand(Action command)
         {
-            System.Windows.Threading.Dispatcher dispatcher = System.Windows.Threading.Dispatcher.CurrentDispatcher;
-
-            dispatcher.BeginInvoke(new Action(() =>
+            _ = System.Threading.Tasks.Task.Run(async() =>
             {
+                await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync(CancellationToken.None);
                 if (_inExecute)
                     throw new InvalidOperationException("Already executing closured command. The command filter has a loop");
 
@@ -158,7 +159,7 @@ namespace Microsoft.VisualStudio.Editor.EmacsEmulation
                 {
                     _inExecute = false;
                 }
-            }), System.Windows.Threading.DispatcherPriority.Input);
+            });
         }
 
         /// <summary>
