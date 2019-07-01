@@ -7,6 +7,8 @@ using Microsoft.VisualStudio.Text.Editor;
 using Microsoft.VisualStudio.Language.Intellisense;
 using Microsoft.VisualStudio.TextManager.Interop;
 using EnvDTE;
+using Microsoft.VisualStudio.Shell;
+using System.Threading;
 
 namespace Microsoft.VisualStudio.Editor.EmacsEmulation
 {
@@ -141,10 +143,9 @@ namespace Microsoft.VisualStudio.Editor.EmacsEmulation
         /// </remarks>
         private void ExecuteClosuredCommand(Action command)
         {
-            System.Windows.Threading.Dispatcher dispatcher = System.Windows.Threading.Dispatcher.CurrentDispatcher;
-
-            dispatcher.BeginInvoke(new Action(() =>
+            _ = System.Threading.Tasks.Task.Run(async() =>
             {
+                await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync(CancellationToken.None);
                 if (_inExecute)
                     throw new InvalidOperationException("Already executing closured command. The command filter has a loop");
 
@@ -158,7 +159,7 @@ namespace Microsoft.VisualStudio.Editor.EmacsEmulation
                 {
                     _inExecute = false;
                 }
-            }), System.Windows.Threading.DispatcherPriority.Input);
+            });
         }
 
         /// <summary>
@@ -178,9 +179,14 @@ namespace Microsoft.VisualStudio.Editor.EmacsEmulation
                 return !IsIntellisenseCommand(ref pguidCmdGroup, nCmdID);
             }
 
+            if(IsSnippetCommand(ref pguidCmdGroup, nCmdID))
+            {
+                return false;
+            }
+
             return true;
         }
-
+        
         private bool IsIntellisenseActive()
         {
             return _completionBroker.IsCompletionActive(_view);
@@ -246,6 +252,20 @@ namespace Microsoft.VisualStudio.Editor.EmacsEmulation
             }
 
             // If the command is none of the above, the it's not an Intellisense command
+            return false;
+        }
+
+        private bool IsSnippetCommand(ref Guid pguidCmdGroup, uint nCmdID)
+        {
+            if (pguidCmdGroup == VSConstants.VSStd2K)
+            {
+                switch (nCmdID)
+                {
+                    case (uint)VSConstants.VSStd2KCmdID.TAB:
+                        return true;
+                }
+            }
+            
             return false;
         }
     }
