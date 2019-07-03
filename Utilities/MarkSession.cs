@@ -179,7 +179,7 @@ namespace Microsoft.VisualStudio.Editor.EmacsEmulation
                         case (uint)VSConstants.VSStd2KCmdID.BACKSPACE:
                         case (uint)VSConstants.VSStd2KCmdID.CANCEL:
                         case (uint)VSConstants.VSStd2KCmdID.TAB:
-                            Deactivate();
+                            Deactivate(false);
                             break;
                     }
                 }
@@ -193,7 +193,7 @@ namespace Microsoft.VisualStudio.Editor.EmacsEmulation
                             Deactivate(false);
                             break;
                         case (uint)VSConstants.VSStd97CmdID.Delete:
-                            Deactivate();
+                            Deactivate(false);
                             break;
                     }
                 }
